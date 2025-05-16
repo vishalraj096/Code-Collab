@@ -130,6 +130,7 @@ export default function Page({ params }: { params: { collabId: string } }) {
   useEffect(() => {
     const newSocket = io(`${process.env.NEXT_PUBLIC_WS_URI}/`);
     setSocket(newSocket);
+    window.socket = newSocket;
 
     // First, try to load any existing data for this space
     const loadSavedData = async () => {
@@ -148,6 +149,18 @@ export default function Page({ params }: { params: { collabId: string } }) {
         // Continue with a new session if no data found
       }
     };
+
+    newSocket.on("space-renamed", (data) => {
+      // Update the space name in state
+      setSpaceName(data.newName);
+
+      // Show a toast notification about the rename
+      toast({
+        title: `Space Renamed`,
+        description: `${data.renamedBy} renamed the space to "${data.newName}"`,
+        action: <ToastAction altText="Dismiss">Dismiss</ToastAction>,
+      });
+    });
 
     loadSavedData();
 

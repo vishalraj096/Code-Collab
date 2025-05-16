@@ -68,6 +68,14 @@ export function RenameDialog({
         { name }
       );
 
+      if (window.socket) {
+        window.socket.emit("space-renamed", {
+          collabId,
+          newName: name,
+          renamedBy: currentUser.name,
+        });
+      }
+
       console.log("Rename response:", response.data);
 
       toast({

@@ -152,6 +152,20 @@ io.on("connection", (socket) => {
       socket.emit("collab-space-saved", { success: false, error: error.message });
     }
   });
+
+  socket.on("space-renamed", (data) => {
+    console.log(`Space ${data.collabId} renamed to "${data.newName}" by ${data.renamedBy}`);
+
+    if (socket.collabId) {
+      // Broadcast to all other users in the room
+      socket.broadcast
+        .to(socket.collabId)
+        .emit("space-renamed", {
+          newName: data.newName,
+          renamedBy: data.renamedBy
+        });
+    }
+  });
 });
 
 
