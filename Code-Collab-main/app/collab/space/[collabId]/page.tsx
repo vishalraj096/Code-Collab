@@ -5,6 +5,7 @@ import CodeEditor from "./Editor";
 import SideBar from "./SideBar";
 import { useEffect, useState } from "react";
 import io from "socket.io-client";
+import axios from "axios";
 
 import { ToastAction } from "@/components/ui/toast";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +23,26 @@ export default function Page({ params }: { params: { collabId: string } }) {
   const [output, setOutput] = useRecoilState(CodeResult);
   const [lang, setLang] = useRecoilState(codeLang);
 
+  const [spaceName, setSpaceName] = useState<string>("Untitled Space");
+
+  // Add this to your useEffect block where you load saved data
+  const loadSavedData = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URI}/collab/getSpace/${params.collabId}`
+      );
+
+      if (response.data) {
+        // Set the code and language from saved data
+        setCodeText(response.data.code);
+        setLang(response.data.language);
+        setSpaceName(response.data.name); // Store the space name
+      }
+    } catch (error) {
+      console.log("No saved data found or error loading:", error);
+    }
+  };
+
   useEffect(() => {
     if (socket && isLocalLangChange) {
       socket.emit("lang-change", lang, currentUser);
@@ -35,11 +56,25 @@ export default function Page({ params }: { params: { collabId: string } }) {
         `${process.env.NEXT_PUBLIC_API_URI}/collab/getActiveUsers?id=${params.collabId}`,
         {}
       );
+
+      if (!resp.ok) {
+        console.error("Failed to fetch active users:", resp.statusText);
+        return;
+      }
+
       const respJson = await resp.json();
 
-      setActiveUsers(respJson);
+      // Filter out any null or empty values
+      const validUsers = Array.isArray(respJson)
+        ? respJson.filter(
+            (user) => user && typeof user === "string" && user.trim() !== ""
+          )
+        : [];
+
+      console.log("Valid active users:", validUsers);
+      setActiveUsers(validUsers);
     } catch (e) {
-      console.log(e);
+      console.error("Error fetching active users:", e);
     }
   }
 
@@ -53,13 +88,73 @@ export default function Page({ params }: { params: { collabId: string } }) {
 
   const { toast } = useToast();
 
+  // Add this inside your component
+  const handleSaveSpace = async (customName?: string) => {
+    if (!socket) return;
+
+    // Use the provided custom name, or fall back to the current space name
+    const nameToSave = customName || spaceName;
+
+    socket.emit("save-collab-space", {
+      collabId: params.collabId,
+      name: nameToSave,
+      code: codeText,
+      language: lang,
+      userId: currentUser.id,
+    });
+
+    toast({
+      title: "Saving...",
+      description: "Your collaboration space is being saved.",
+    });
+
+    socket.on(
+      "collab-space-saved",
+      (result: { success: boolean; error?: string }) => {
+        if (result.success) {
+          toast({
+            title: "Success",
+            description: "Your collaboration space has been saved.",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to save your collaboration space.",
+            variant: "destructive",
+          });
+        }
+      }
+    );
+  };
+
   useEffect(() => {
     const newSocket = io(`${process.env.NEXT_PUBLIC_WS_URI}/`);
     setSocket(newSocket);
 
+    // First, try to load any existing data for this space
+    const loadSavedData = async () => {
+      try {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URI}/collab/getSpace/${params.collabId}`
+        );
+
+        if (response.data) {
+          // Set the code and language from saved data
+          setCodeText(response.data.code);
+          setLang(response.data.language);
+        }
+      } catch (error) {
+        console.log("No saved data found or error loading:", error);
+        // Continue with a new session if no data found
+      }
+    };
+
+    loadSavedData();
+
     newSocket.emit("join-room", {
       collabId: params.collabId,
-      user: currentUser,
+      user: currentUser.name,
+      userId: currentUser.id,
     });
 
     setTimeout(getActiveUsers, 3000);
@@ -100,7 +195,13 @@ export default function Page({ params }: { params: { collabId: string } }) {
     });
 
     return () => {
-      newSocket.emit("send-left-room", currentUser);
+      newSocket.emit(
+        "send-left-room",
+        currentUser.name,
+        codeText,
+        lang,
+        currentUser.id
+      );
       newSocket.disconnect();
     };
   }, []);
@@ -111,9 +212,14 @@ export default function Page({ params }: { params: { collabId: string } }) {
         <div className="flex-grow flex relative m-2">
           <div className="w-1/5 h-full z-50 flex flex-col justify-between">
             <SideBar
-              members={activeUsers}
+              members={Array.isArray(activeUsers) ? activeUsers : []}
               langChange={handleLangChange}
-              className="h-3/5"
+              // onSave={() => handleSaveSpace()}
+              onSave={handleSaveSpace}
+              spaceName={spaceName}
+              setSpaceName={setSpaceName}
+              collabId={params.collabId}
+              className="h-screen"
             />
             <div className="m-2 w-1/6 absolute bottom-0">
               <OutputTerminal output={output} />

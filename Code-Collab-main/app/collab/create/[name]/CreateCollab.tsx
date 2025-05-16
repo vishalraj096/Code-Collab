@@ -41,6 +41,14 @@ const formSchema = z.object({
     .max(50, {
       message: "Username must not exceed 50 characters.",
     }),
+  spaceName: z
+    .string()
+    .min(1, {
+      message: "Space name is required.",
+    })
+    .max(100, {
+      message: "Space name must not exceed 100 characters.",
+    }),
 });
 
 function CreateCollab({ params }: { params: { name: string } }) {
@@ -59,6 +67,7 @@ function CreateCollab({ params }: { params: { name: string } }) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       userName: "",
+      spaceName: "Untitled Space", // Default space name
     },
   });
 
@@ -74,6 +83,8 @@ function CreateCollab({ params }: { params: { name: string } }) {
     setSubmitting(true);
 
     try {
+      console.log("Submitting form with values:", values);
+
       const result = await fetch(
         `${process.env.NEXT_PUBLIC_API_URI}/collab/createRoom`,
         {
@@ -83,6 +94,8 @@ function CreateCollab({ params }: { params: { name: string } }) {
           },
           body: JSON.stringify({
             name: values.userName,
+            spaceName: values.spaceName,
+            userId: currentUser.id,
           }),
         }
       );
@@ -90,8 +103,24 @@ function CreateCollab({ params }: { params: { name: string } }) {
       if (result.ok) {
         const respJson = await result.json();
 
+        await fetch(
+          `${process.env.NEXT_PUBLIC_API_URI}/collab/renameSpace/${respJson.collabId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              name: values.spaceName,
+            }),
+          }
+        );
+
         // set the recoil userState
-        setCurrentUser(values.userName);
+        setCurrentUser({
+          name: values.userName,
+          id: currentUser.id, // Preserve the existing ID
+        });
 
         setCollabId(respJson.collabId);
         setUrl(`http://localhost:3000/collab/join/${respJson.collabId}`);
@@ -144,13 +173,26 @@ function CreateCollab({ params }: { params: { name: string } }) {
                       </FormItem>
                     )}
                   />
+                  <FormField
+                    control={form.control}
+                    name="spaceName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Space Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter space name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </CardContent>
                 <CardFooter className="flex justify-between">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      router.push("/");
+                      router.push("/dashboard");
                     }}
                   >
                     Cancel
@@ -198,13 +240,13 @@ function CreateCollab({ params }: { params: { name: string } }) {
               </CardContent>
               <CardFooter className="flex justify-between">
                 <Button
+                  type="button"
                   variant="outline"
                   onClick={() => {
-                    setCreated(false);
-                    form.reset();
+                    router.push("/dashboard");
                   }}
                 >
-                  Create Another Space
+                  Back to Dashboard
                 </Button>
                 <Link href={`/collab/space/${collabId}`}>
                   <Button>Go To Collab-Space &gt;</Button>

@@ -116,6 +116,7 @@ userRouter.post("/signin", async (req, res) => {
     res.status(200).json({
       message: "Signin successful",
       userName: existingUser.name,
+      userId: existingUser._id  // Added this line to return the user ID
     });
   } catch (error) {
     console.error("Signin error:", error);

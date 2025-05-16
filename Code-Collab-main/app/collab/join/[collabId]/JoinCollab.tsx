@@ -118,9 +118,9 @@ export default function JoinCollab({ collabId }: { collabId: string }) {
           }),
         }
       );
-  
+
       const respJson = await resp.json();
-  
+
       if (!resp.ok) {
         let errorMessage = "Uh oh! Something went wrong.";
         if (respJson.error === "Link has expired") {
@@ -132,11 +132,15 @@ export default function JoinCollab({ collabId }: { collabId: string }) {
           action: <ToastAction altText="Try again">Dismiss</ToastAction>,
         });
       } else {
-        setCurrentUser(values.userName);
+        setCurrentUser({
+          name: values.userName, // Properly set the user name
+          id: currentUser.id || null, // Keep existing ID if available
+        });
         setJoined(true);
         toast({
           title: "You Have Joined the Collab-Space.",
-          description: "You can now go the Collab-Space by Clicking the Go to Collab-Space Button",
+          description:
+            "You can now go the Collab-Space by Clicking the Go to Collab-Space Button",
           action: <ToastAction altText="Try again">Dismiss</ToastAction>,
         });
       }

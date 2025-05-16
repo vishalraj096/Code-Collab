@@ -6,6 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import axios from "axios";
 import * as z from "zod";
+import { useRecoilState } from "recoil";
+import { userState } from "@/app/states/userState";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -63,6 +65,7 @@ const passwordSchema = z
 
 export default function LoginPage() {
   const [resetEmail, setResetEmail] = useState("");
+  const [currentUser, setCurrentUser] = useRecoilState(userState);
   const [isLoading, setIsLoading] = useState(false);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [forgotPasswordStep, setForgotPasswordStep] = useState<
@@ -103,13 +106,17 @@ export default function LoginPage() {
         password: values.password,
       });
 
-      console.log(response.data.userName);
+      // Update to store both name and ID
+      setCurrentUser({
+        name: response.data.userName,
+        id: response.data.userId,
+      });
 
       toast({
         title: "Login Successful",
         description: "You have been logged in successfully.",
       });
-      router.push(`/collab/create/${response.data.userName}`);
+      router.push(`/dashboard`); // Redirect to dashboard instead of direct create
     } catch (error) {
       console.log("Login failed:", error);
       toast({
