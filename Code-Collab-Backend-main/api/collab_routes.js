@@ -50,7 +50,7 @@ collabRouter.post("/joinRoom", (req, res) => {
   if (hasId) {
     const room = collection.get(collabId);
     const currentTime = Date.now();
-    const oneHour = 60 * 60 * 1000;
+    const oneHour = 60000 * 60 * 1000;
 
     if (currentTime - room.createdAt > oneHour) {
       console.log("Link has expired");

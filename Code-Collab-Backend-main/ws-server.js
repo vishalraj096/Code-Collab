@@ -64,47 +64,42 @@ io.on("connection", (socket) => {
   socket.on("send-left-room", async (userLeft, codeState, languageState, userId) => {
     console.log(`${userLeft} left the room`);
 
-    socket.broadcast.to(message.collabId).emit("receive-left-room", userLeft);
-
-    // Save the current state when user leaves
-    if (codeState) {
-      try {
-        await axios.post("http://localhost:4000/collab/saveSpace", {
-          collabId: message.collabId,
-          code: codeState,
-          language: languageState,
-          userId: userId // Now using the passed userId parameter
-        });
-      } catch (error) {
-        console.log("Failed to save collab state:", error);
-      }
-    }
-
-    // Existing leftHook code
-    try {
-      await fetch("http://localhost:4000/collab/leftHook", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userLeft: userLeft,
-          collabId: message.collabId,
-        }),
-      });
-    } catch (e) {
-      console.log("crashed 62");
-      console.log(e);
-    }
-  });
-
-  socket.on("lang-change", async (changedLang, changedByUser) => {
-    console.log(`${changedByUser} changed language to ${changedLang.name}`);
-
+    // Use socket.collabId instead of message.collabId
     if (socket.collabId) {
-      socket.broadcast
-        .to(socket.collabId)  // Use socket.collabId instead
-        .emit("lang-change", changedLang, changedByUser);
+      socket.broadcast.to(socket.collabId).emit("receive-left-room", userLeft);
+
+      // Save the current state when user leaves
+      if (codeState) {
+        try {
+          await axios.post("http://localhost:4000/collab/saveSpace", {
+            collabId: socket.collabId,  // Fixed reference
+            code: codeState,
+            language: languageState,
+            userId: userId
+          });
+        } catch (error) {
+          console.log("Failed to save collab state:", error);
+        }
+      }
+
+      // Existing leftHook code
+      try {
+        await fetch("http://localhost:4000/collab/leftHook", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userLeft: userLeft,
+            collabId: socket.collabId,  // Fixed reference
+          }),
+        });
+      } catch (e) {
+        console.log("crashed 62");
+        console.log(e);
+      }
+    } else {
+      console.log("Cannot process 'left room' event: collabId not set on socket");
     }
   });
 
