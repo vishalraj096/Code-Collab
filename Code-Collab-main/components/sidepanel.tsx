@@ -40,7 +40,7 @@ export const SidePanel = forwardRef<HTMLDivElement, PanelContainerProps>(
       <ResizablePanel>
         <motion.div
           className={cn(
-            "bg-neutral-900 rounded-r-[44px] w-[160px] md:w-[260px]",
+            "bg-neutral-900 rounded-r-[44px] w-[160px] md:w-[260px] h-full", // Added h-full here
             className
           )}
           animate={panelOpen ? "open" : "closed"}
@@ -49,7 +49,7 @@ export const SidePanel = forwardRef<HTMLDivElement, PanelContainerProps>(
         >
           <motion.div
             animate={{ height: bounds.height > 0 ? bounds.height : 0.1 }}
-            className="h-auto"
+            className="h-full" // Changed from h-auto to h-full
             transition={{ type: "spring", bounce: 0.02, duration: 0.65 }}
           >
             <div ref={measureRef}>
@@ -75,8 +75,13 @@ export const SidePanel = forwardRef<HTMLDivElement, PanelContainerProps>(
                     <motion.div
                       exit={{ opacity: 0 }}
                       transition={sharedTransition}
+                      className="h-full"
                     >
-                      {children}
+                      <div className="h-full transition-all overflow-hidden">
+                        <div className="w-full h-full overflow-y-auto flex flex-col">
+                          {children}
+                        </div>
+                      </div>
                     </motion.div>
                   )}
                 </motion.div>

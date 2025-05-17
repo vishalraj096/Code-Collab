@@ -14,6 +14,21 @@ export default function CodeEditor({
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<Monaco | null>(null);
 
+  const getMonacoLanguage = (lang: string): string => {
+    const languageMap: Record<string, string> = {
+      js: "javascript",
+      javaScript: "javascript",
+      py: "python",
+      python: "python",
+      c: "c",
+      rs: "rust",
+      rust: "rust",
+      java: "java",
+    };
+
+    return languageMap[lang] || lang;
+  };
+
   function handleEditorDidMount(editor: any, monaco: Monaco) {
     editorRef.current = editor;
     monacoRef.current = monaco;
@@ -64,10 +79,22 @@ export default function CodeEditor({
     }
   }, [value]);
 
+  useEffect(() => {
+    if (monacoRef.current && editorRef.current) {
+      const model = editorRef.current.getModel();
+      if (model) {
+        monacoRef.current.editor.setModelLanguage(
+          model,
+          getMonacoLanguage(lang)
+        );
+      }
+    }
+  }, [lang]);
+
   return (
     <div className="md:h-[90vh] md:w-[98%] h-[60vh] border-2">
       <Editor
-        language={lang}
+        language={getMonacoLanguage(lang)}
         theme="vs-dark"
         value={value}
         onChange={onChange}

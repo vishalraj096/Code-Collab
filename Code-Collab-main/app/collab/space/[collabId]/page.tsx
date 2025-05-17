@@ -297,24 +297,24 @@ export default function Page({ params }: { params: { collabId: string } }) {
 
   return (
     <>
-      <div className="w-screen h-screen">
-        <div className="flex-grow flex relative m-2">
-          <div className="w-1/5 h-full z-50 flex flex-col justify-between">
-            <SideBar
-              members={Array.isArray(activeUsers) ? activeUsers : []}
-              langChange={handleLangChange}
-              // onSave={() => handleSaveSpace()}
-              onSave={handleSaveSpace}
-              spaceName={spaceName}
-              setSpaceName={setSpaceName}
-              collabId={params.collabId}
-              className="h-screen"
-            />
-            <div className="m-2 w-1/6 absolute bottom-0">
-              <OutputTerminal output={output} />
-            </div>
-          </div>
-          <div className="w-4/5 h-full">
+      <div className="w-screen h-screen flex">
+        {/* Sidebar container with fixed width and independent scrolling */}
+        <div className="w-1/5 h-screen flex-shrink-0 border-r">
+          <SideBar
+            members={Array.isArray(activeUsers) ? activeUsers : []}
+            langChange={handleLangChange}
+            onSave={handleSaveSpace}
+            spaceName={spaceName}
+            setSpaceName={setSpaceName}
+            collabId={params.collabId}
+            className="h-full"
+          />
+        </div>
+
+        {/* Main content area */}
+        <div className="flex-1 h-screen flex flex-col">
+          {/* Code editor takes most of the space */}
+          <div className="flex-1 overflow-hidden">
             <CodeEditor
               value={codeText}
               lang={lang.name}
@@ -323,6 +323,11 @@ export default function Page({ params }: { params: { collabId: string } }) {
                 emitCodeChange(e);
               }}
             />
+          </div>
+
+          {/* Output terminal at the bottom with fixed height */}
+          <div className="h-1/4 p-4 overflow-auto border-t">
+            <OutputTerminal output={output} />
           </div>
         </div>
       </div>

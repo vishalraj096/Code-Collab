@@ -193,8 +193,9 @@ export default function SideBar({
       >
         {isPanelOpen && (
           <div className="flex flex-col h-full">
+            {/* Header with space name - fixed at top */}
             {isNameLoaded ? (
-              <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-background z-10">
                 <h2 className="text-lg font-semibold">{spaceName}</h2>
                 <RenameDialog
                   collabId={collabId}
@@ -203,106 +204,104 @@ export default function SideBar({
                 />
               </div>
             ) : (
-              <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center justify-between p-4 border-b sticky top-0 bg-background z-10">
                 <h2 className="text-lg font-semibold">Loading...</h2>
               </div>
             )}
-            <div className="mb-6 flex items-center justify-between px-4">
-              <TooltipProvider>
-                <Tooltip>
-                  {/* <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <UserRoundCog className="w-5 h-5" />
-                    </Button>
-                  </TooltipTrigger> */}
-                  <TooltipContent>Workspace Settings</TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
 
-            <div className="mb-6 space-y-2 px-4">
-              <div className="flex items-center space-x-2">
-                <Code2 className="w-6 h-6 text-primary" />
-                <h2 className="text-lg font-semibold">Selection</h2>
-              </div>
-              <Select
-                value={lang.name}
-                onValueChange={(selectedLang) => {
-                  const selectedLangObj = langArray.find(
-                    (l) => l.name === selectedLang
-                  );
-                  if (selectedLangObj) {
-                    // Pass the selected language directly to langChange
-                    langChange(selectedLangObj);
-                  }
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select Language">
-                    <div className="flex items-center">
-                      <span className="mr-2">
-                        {langArray.find((l) => l.name === lang.name)?.icon ||
-                          "🟨"}
-                      </span>
-                      {lang.name}
-                    </div>
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {langArray.map((elem) => (
-                    <SelectItem key={elem.val} value={elem.name}>
+            {/* Language selector - fixed below header */}
+            <div className="px-4 py-2 border-b sticky top-16 bg-background z-10">
+              <div className="mb-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <Code2 className="w-5 h-5 text-primary" />
+                  <h2 className="text-base font-medium">Language</h2>
+                </div>
+                <Select
+                  value={lang.name}
+                  onValueChange={(selectedLang) => {
+                    const selectedLangObj = langArray.find(
+                      (l) => l.name === selectedLang
+                    );
+                    if (selectedLangObj) {
+                      langChange(selectedLangObj);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select Language">
                       <div className="flex items-center">
-                        <span className="mr-2">{elem.icon}</span>
-                        {elem.name}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Separator className="my-2" />
-
-            <div className="flex-grow overflow-auto px-4 space-y-4">
-              <div className="flex items-center space-x-2 my-2">
-                <User2 className="w-6 h-6 text-primary" />
-                <h2 className="text-base text-muted-foreground">
-                  Active Members (
-                  {Array.isArray(members) ? members.filter((m) => m).length : 0}
-                  )
-                </h2>
-              </div>
-
-              <div className="space-y-4">
-                {Array.isArray(members) ? (
-                  members.map((member) =>
-                    member ? (
-                      <div key={member} className="flex items-center space-x-2">
-                        <Avatar className="w-8 h-8">
-                          <AvatarImage
-                            src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                              member || "Guest"
-                            )}&background=random`}
-                          />
-                          <AvatarFallback>
-                            {member && member.length > 0
-                              ? member[0].toUpperCase()
-                              : "G"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm">
-                          {member || "Guest User"}
+                        <span className="mr-2">
+                          {langArray.find((l) => l.name === lang.name)?.icon ||
+                            "🟨"}
                         </span>
+                        {lang.name}
                       </div>
-                    ) : null
-                  )
-                ) : (
-                  <div>No active members</div>
-                )}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {langArray.map((elem) => (
+                      <SelectItem key={elem.val} value={elem.name}>
+                        <div className="flex items-center">
+                          <span className="mr-2">{elem.icon}</span>
+                          {elem.name}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
-            <div className="mt-auto p-4 space-y-2">
+            {/* Scrollable main content */}
+            <div className="flex-1 overflow-y-auto">
+              {/* Active members section */}
+              <div className="px-4 py-2">
+                <div className="flex items-center space-x-2 my-2">
+                  <User2 className="w-5 h-5 text-primary" />
+                  <h2 className="text-base font-medium">
+                    Active Members (
+                    {Array.isArray(members)
+                      ? members.filter((m) => m).length
+                      : 0}
+                    )
+                  </h2>
+                </div>
+
+                <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                  {Array.isArray(members) ? (
+                    members.map((member) =>
+                      member ? (
+                        <div
+                          key={member}
+                          className="flex items-center space-x-2 p-1"
+                        >
+                          <Avatar className="w-6 h-6">
+                            <AvatarImage
+                              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                member || "Guest"
+                              )}&background=random`}
+                            />
+                            <AvatarFallback>
+                              {member && member.length > 0
+                                ? member[0].toUpperCase()
+                                : "G"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm truncate">
+                            {member || "Guest User"}
+                          </span>
+                        </div>
+                      ) : null
+                    )
+                  ) : (
+                    <div>No active members</div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Action buttons - fixed at bottom */}
+            <div className="p-4 border-t sticky bottom-0 bg-background z-10 space-y-2">
               <Button variant="ghost" className="w-full" onClick={handleSave}>
                 <Save className="mr-2 w-4 h-4" />
                 Save
@@ -315,7 +314,7 @@ export default function SideBar({
                 <Download className="mr-2 w-4 h-4" />
                 Download
               </Button>
-              <Link href="/dashboard" className="w-full block mt-4">
+              <Link href="/dashboard" className="w-full block mt-2">
                 <Button variant="destructive" className="w-full">
                   <LogOut className="mr-2 w-4 h-4" />
                   Leave CollabSpace
