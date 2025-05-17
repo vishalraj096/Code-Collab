@@ -65,8 +65,8 @@ export default function SideBar({
   className = "",
 }: {
   members: string[];
-  langChange: () => void;
-  onSave: (customName?: string) => void; // Updated signature
+  langChange: (newLang?: any) => void; // Updated signature
+  onSave: (customName?: string) => void;
   collabId: string;
   spaceName: string;
   setSpaceName: React.Dispatch<React.SetStateAction<string>>;
@@ -232,8 +232,8 @@ export default function SideBar({
                     (l) => l.name === selectedLang
                   );
                   if (selectedLangObj) {
-                    langChange();
-                    setLang(selectedLangObj);
+                    // Pass the selected language directly to langChange
+                    langChange(selectedLangObj);
                   }
                 }}
               >

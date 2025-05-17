@@ -241,23 +241,21 @@ collabRouter.get("/getUserSpaces/:userId", async (req, res) => {
 // Get a specific collaboration space
 collabRouter.get("/getSpace/:collabId", async (req, res) => {
   try {
-    const collabId = req.params.collabId;
+    const { collabId } = req.params;
+    console.log(`Getting space data for ${collabId}`);
 
-    const space = await CollabSpace.findOne({ collabId });
+    const collabSpace = await CollabSpace.findOne({ collabId });
 
-    if (!space) {
-      return res.status(404).json({
-        message: "Collaboration space not found"
-      });
+    if (!collabSpace) {
+      console.log(`No space found for ID ${collabId}`);
+      return res.status(404).json({ error: "Collab space not found" });
     }
 
-    res.status(200).json(space);
+    console.log(`Found space: ${collabSpace.name}, code length: ${collabSpace.code ? collabSpace.code.length : 0}`);
+    res.json(collabSpace);
   } catch (error) {
-    console.error("Error fetching collab space:", error);
-    res.status(500).json({
-      message: "Failed to fetch collaboration space",
-      error: error.message
-    });
+    console.error("Error getting collab space:", error);
+    res.status(500).json({ error: "Server error" });
   }
 });
 

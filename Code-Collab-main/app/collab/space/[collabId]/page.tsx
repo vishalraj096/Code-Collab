@@ -22,6 +22,7 @@ export default function Page({ params }: { params: { collabId: string } }) {
   const [isLocalLangChange, setIsLocalLangChange] = useState(false);
   const [output, setOutput] = useRecoilState(CodeResult);
   const [lang, setLang] = useRecoilState(codeLang);
+  const [lastSaveTime, setLastSaveTime] = useState<number>(Date.now());
 
   const [spaceName, setSpaceName] = useState<string>("Untitled Space");
 
@@ -49,6 +50,32 @@ export default function Page({ params }: { params: { collabId: string } }) {
       setIsLocalLangChange(false);
     }
   }, [lang]);
+
+  useEffect(() => {
+    const AUTO_SAVE_INTERVAL = 10000; // 10 seconds
+
+    // Don't auto-save if no changes or no socket
+    if (!socket || !codeText) return;
+
+    const currentTime = Date.now();
+    // Only save if it's been at least AUTO_SAVE_INTERVAL since last save
+    if (currentTime - lastSaveTime < AUTO_SAVE_INTERVAL) return;
+
+    // Auto-save the current code
+    const saveCode = async () => {
+      console.log("Auto-saving current code state...");
+      socket.emit("save-collab-space", {
+        collabId: params.collabId,
+        name: spaceName,
+        code: codeText,
+        language: lang,
+        userId: currentUser.id,
+      });
+      setLastSaveTime(currentTime);
+    };
+
+    saveCode();
+  }, [codeText, socket]);
 
   async function getActiveUsers() {
     try {
@@ -82,8 +109,21 @@ export default function Page({ params }: { params: { collabId: string } }) {
     socket.emit("send-code-change", { code: e, user: currentUser });
   }
 
-  const handleLangChange = () => {
-    setIsLocalLangChange(true);
+  const handleLangChange = (newLang?: any) => {
+    // If a specific language is provided, use it directly
+    if (newLang) {
+      // Set the language locally
+      setLang(newLang);
+
+      // Emit the change to other users if socket exists
+      if (socket) {
+        console.log(`Emitting language change to ${newLang.name}`);
+        socket.emit("lang-change", newLang, currentUser.name);
+      }
+    } else {
+      // Original behavior - just flag for change
+      setIsLocalLangChange(true);
+    }
   };
 
   const { toast } = useToast();
@@ -162,6 +202,38 @@ export default function Page({ params }: { params: { collabId: string } }) {
       });
     });
 
+    newSocket.on("initial-code-state", (data) => {
+      console.log("Received initial code state:", {
+        codeLength: data.code ? data.code.length : 0,
+        language: data.language,
+        name: data.name,
+      });
+
+      // Update code in editor - make sure to check if it's different first
+      if (data.code !== undefined) {
+        console.log(`Setting code text (${data.code.length} characters)`);
+        setCodeText(data.code);
+      }
+
+      // Update language if provided
+      if (data.language) {
+        console.log("Setting language to:", data.language);
+        setLang(data.language);
+      }
+
+      // Update space name if provided
+      if (data.name) {
+        console.log("Setting space name to:", data.name);
+        setSpaceName(data.name);
+      }
+
+      toast({
+        title: "Code Loaded",
+        description: "You're now seeing the current state of the collaboration",
+        action: <ToastAction altText="Dismiss">Dismiss</ToastAction>,
+      });
+    });
+
     loadSavedData();
 
     newSocket.emit("join-room", {
@@ -196,15 +268,19 @@ export default function Page({ params }: { params: { collabId: string } }) {
       setTimeout(getActiveUsers);
     });
 
-    newSocket.on("lang-change", (changedLang, changedByUser: string) => {
-      if (changedLang.name !== lang.name) {
-        setLang(changedLang);
+    newSocket.on("lang-change", (changedLang, changedByUser) => {
+      console.log(
+        `Received language change to ${changedLang.name} from ${changedByUser}`
+      );
 
-        toast({
-          title: `${changedByUser} has changed language to ${changedLang.name}`,
-          action: <ToastAction altText="Try again">Dismiss</ToastAction>,
-        });
-      }
+      // Always update the language (remove conditional check)
+      setLang(changedLang);
+
+      toast({
+        title: `Language Changed`,
+        description: `${changedByUser} changed language to ${changedLang.name}`,
+        action: <ToastAction altText="Dismiss">Dismiss</ToastAction>,
+      });
     });
 
     return () => {

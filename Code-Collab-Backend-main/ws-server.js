@@ -49,6 +49,48 @@ io.on("connection", (socket) => {
       } catch (e) {
         console.error("Failed to call activeHook:", e);
       }
+
+      try {
+        // Get current code state from database
+        console.log(`Fetching initial state for ${message.collabId}...`);
+        const response = await axios.get(`http://localhost:4000/collab/getSpace/${message.collabId}`);
+
+        console.log("Response from getSpace:", response.status,
+          response.data ? "Data received" : "No data received");
+
+        if (response.data) {
+          // Log what we're sending
+          console.log(`Sending initial state to ${message.user}:`, {
+            codeLength: response.data.code ? response.data.code.length : 0,
+            language: response.data.language,
+            name: response.data.name
+          });
+
+          // Send the current state only to the socket that just joined
+          socket.emit("initial-code-state", {
+            code: response.data.code || "",
+            language: response.data.language || { name: "javascript", val: "js" },
+            name: response.data.name || "Untitled Space"
+          });
+          console.log(`Sent initial code state to ${message.user}`);
+        } else {
+          console.log(`No data found for space ${message.collabId}`);
+          // Send empty defaults
+          socket.emit("initial-code-state", {
+            code: "",
+            language: { name: "javascript", val: "js" },
+            name: "Untitled Space"
+          });
+        }
+      } catch (error) {
+        console.error("Failed to send initial code state:", error);
+        // Send empty defaults on error
+        socket.emit("initial-code-state", {
+          code: "",
+          language: { name: "javascript", val: "js" },
+          name: "Untitled Space"
+        });
+      }
     }
   });
 
@@ -164,6 +206,16 @@ io.on("connection", (socket) => {
           newName: data.newName,
           renamedBy: data.renamedBy
         });
+    }
+  });
+
+  socket.on("lang-change", async (changedLang, changedByUser) => {
+    console.log(`${changedByUser} changed language to ${changedLang.name}`);
+
+    if (socket.collabId) {
+      socket.broadcast
+        .to(socket.collabId)
+        .emit("lang-change", changedLang, changedByUser);
     }
   });
 });

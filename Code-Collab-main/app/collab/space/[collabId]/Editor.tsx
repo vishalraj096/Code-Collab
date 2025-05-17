@@ -52,6 +52,18 @@ export default function CodeEditor({
     }
   }, [lang]);
 
+  useEffect(() => {
+    if (editorRef.current && value !== undefined) {
+      console.log(`Editor update: Setting ${value.length} characters of code`);
+
+      // Only update if the value has changed to avoid infinite loops
+      const currentValue = editorRef.current.getValue();
+      if (currentValue !== value) {
+        editorRef.current.setValue(value);
+      }
+    }
+  }, [value]);
+
   return (
     <div className="md:h-[90vh] md:w-[98%] h-[60vh] border-2">
       <Editor
