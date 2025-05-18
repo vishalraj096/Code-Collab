@@ -1,4 +1,4 @@
-Code Collab
+## Code Collab
 
 A real-time collaborative code editing platform that makes coding together effortless. Write, execute, and share code with your team - all in one place.
 
