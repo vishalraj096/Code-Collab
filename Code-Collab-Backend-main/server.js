@@ -1,7 +1,6 @@
 // HTTP Server Setup
 import express from "express";
 import cors from "cors";
-import { Copilot } from "monacopilot";
 import userRouter from "./api/user_routes.js";
 import collabRouter from "./api/collab_routes.js";
 import {connectdb} from "./api/models/db.js";
@@ -21,29 +20,13 @@ app.get("/", (req, res) => {
   });
 });
 
-const copilot = new Copilot("AIzaSyC - KojYDu7jGuMdJPjKYBMQPYM4ASXCqxA", {
-  provider: "google",
-  model: "gemini-1.5-flash",
-});
-
+// AI autocomplete feature removed - endpoint disabled to prevent errors
 app.post("/complete", async (req, res) => {
-  const { completion, error, raw } = await copilot.complete({
-    body: req.body,
+  // Feature temporarily disabled
+  return res.status(503).json({ 
+    completion: null, 
+    error: "AI autocomplete feature is currently disabled" 
   });
-
-  // Process raw LLM response if needed
-  // `raw` can be undefined if an error occurred, which happens when `error` is present
-//   if (raw) {
-//     await calculateCost(raw.usage.input_tokens);
-//   }
-
-  // Handle errors if present
-  if (error) {
-    console.error("Completion error:", error);
-    res.status(500).json({ completion: null, error });
-  }
-
-  res.status(200).json({ completion });
 })
 
 

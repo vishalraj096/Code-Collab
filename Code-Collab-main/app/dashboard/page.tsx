@@ -112,6 +112,19 @@ export default function Dashboard() {
               Create New Space
             </Button>
           </Link>
+          {/* <Button 
+            onClick={() => {
+              toast({
+                title: "Demo Mode",
+                description: "Create Space feature is disabled for demo",
+                variant: "default",
+              });
+            }}
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Create New Space
+          </Button> */}
+          
           <Button
             variant="outline"
             onClick={() => {
@@ -133,6 +146,18 @@ export default function Dashboard() {
           <Link href={`/collab/create/${currentUser.name}`}>
             <Button>Create Your First Space</Button>
           </Link>
+          {/* <Button 
+            onClick={() => {
+              toast({
+                title: "Demo Mode", 
+                description: "Create Space feature is disabled for demo",
+                variant: "default",
+              });
+            }}
+          >
+            Create Your First Space
+          </Button> */}
+
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

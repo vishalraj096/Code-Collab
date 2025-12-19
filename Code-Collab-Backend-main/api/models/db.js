@@ -1,12 +1,14 @@
 import mongoose from 'mongoose';
-export const connectdb =async () =>{
-    try  {
-        await mongoose.connect('mongodb://localhost:27017/');
-        // await mongoose.connect('mongodb+srv://dubeysd:123321@cluster0.g1xz4.mongodb.net/project');
-        console.log("db connected");
+export const connectdb = async () => {
+    try {
+        await mongoose.connect('mongodb://localhost:27017/codecollab', {
+            serverSelectionTimeoutMS: 5000,
+        });
+        console.log("✅ MongoDB connected successfully to 'codecollab' database");
     }
     catch(err){
-        console.log(err)
-        console.log("db not connected");
+        console.error("❌ MongoDB connection error:", err.message);
+        console.log("Make sure MongoDB is running on localhost:27017");
+        // Don't exit the process, let the app continue
     }
 }

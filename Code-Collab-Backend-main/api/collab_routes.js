@@ -41,11 +41,32 @@ collabRouter.post("/createRoom", async (req, res) => {
   });
 });
 
-collabRouter.post("/joinRoom", (req, res) => {
+collabRouter.post("/joinRoom", async (req, res) => {
   console.log("Request body:", req.body);
   const userName = req.body.name;
   const collabId = req.body.collabId;
-  const hasId = collection.has(collabId);
+  
+  let hasId = collection.has(collabId);
+
+  // If not in memory, check MongoDB
+  if (!hasId) {
+    try {
+      const collabSpace = await CollabSpace.findOne({ collabId });
+      if (collabSpace) {
+        // Restore to memory collection
+        const entry = {
+          users: [userName],
+          activeUsers: [],
+          createdAt: collabSpace.createdAt.getTime(),
+        };
+        collection.set(collabId, entry);
+        console.log(`Restored collab ${collabId} from MongoDB to memory`);
+        hasId = true;
+      }
+    } catch (error) {
+      console.error("Error checking MongoDB for collabId:", error);
+    }
+  }
 
   if (hasId) {
     const room = collection.get(collabId);
@@ -76,7 +97,7 @@ collabRouter.post("/joinRoom", (req, res) => {
   }
 });
 
-collabRouter.post("/activeHook", (req, res) => {
+collabRouter.post("/activeHook", async (req, res) => {
   console.log("Active hook called with:", req.body);
   const collabId = req.body.collabId;
   const activeUser = req.body.activeUser;
@@ -86,7 +107,29 @@ collabRouter.post("/activeHook", (req, res) => {
     return res.status(400).json({ error: "Valid username required" });
   }
 
-  if (!collection.has(collabId)) {
+  let hasId = collection.has(collabId);
+
+  // If not in memory, check MongoDB and restore
+  if (!hasId) {
+    try {
+      const collabSpace = await CollabSpace.findOne({ collabId });
+      if (collabSpace) {
+        // Restore to memory collection
+        const entry = {
+          users: [],
+          activeUsers: [],
+          createdAt: collabSpace.createdAt.getTime(),
+        };
+        collection.set(collabId, entry);
+        console.log(`Restored collab ${collabId} from MongoDB to memory for activeHook`);
+        hasId = true;
+      }
+    } catch (error) {
+      console.error("Error checking MongoDB for collabId:", error);
+    }
+  }
+
+  if (!hasId) {
     console.error("Collab ID not found:", collabId);
     return res.status(404).json({ error: "Collab ID not found" });
   }
@@ -108,8 +151,6 @@ collabRouter.post("/activeHook", (req, res) => {
     console.log(collection);
     console.log(`Added ${normalizedUser} to active users in ${collabId}`);
     console.log(`Active users now: ${newActiveUsers.join(', ')}`);
-    console.log(`Added ${activeUser} to active users in ${collabId}`);
-    console.log(`Active users now: ${newActiveUsers.join(', ')}`);
     res.status(200).json({
       message: "Success",
       activeUsers: newActiveUsers
@@ -123,7 +164,7 @@ collabRouter.post("/activeHook", (req, res) => {
   }
 });
 
-collabRouter.post("/leftHook", (req, res) => {
+collabRouter.post("/leftHook", async (req, res) => {
   console.log("Left hook called with:", req.body);
   const collabId = req.body.collabId;
   const userLeft = req.body.userLeft;
@@ -133,7 +174,29 @@ collabRouter.post("/leftHook", (req, res) => {
     return res.status(400).json({ error: "Valid username required" });
   }
 
-  if (!collection.has(collabId)) {
+  let hasId = collection.has(collabId);
+
+  // If not in memory, check MongoDB and restore
+  if (!hasId) {
+    try {
+      const collabSpace = await CollabSpace.findOne({ collabId });
+      if (collabSpace) {
+        // Restore to memory collection
+        const entry = {
+          users: [],
+          activeUsers: [],
+          createdAt: collabSpace.createdAt.getTime(),
+        };
+        collection.set(collabId, entry);
+        console.log(`Restored collab ${collabId} from MongoDB to memory for leftHook`);
+        hasId = true;
+      }
+    } catch (error) {
+      console.error("Error checking MongoDB for collabId:", error);
+    }
+  }
+
+  if (!hasId) {
     console.error("Collab ID not found:", collabId);
     return res.status(404).json({ error: "Collab ID not found" });
   }
@@ -162,14 +225,36 @@ collabRouter.post("/leftHook", (req, res) => {
   });
 });
 
-collabRouter.get("/getActiveUsers", (req, res) => {
+collabRouter.get("/getActiveUsers", async (req, res) => {
   const collabId = req.query.id;
 
-  if (!collection.has(collabId)) {
+  let hasId = collection.has(collabId);
+
+  // If not in memory, check MongoDB and restore
+  if (!hasId) {
+    try {
+      const collabSpace = await CollabSpace.findOne({ collabId });
+      if (collabSpace) {
+        // Restore to memory collection
+        const entry = {
+          users: [],
+          activeUsers: [],
+          createdAt: collabSpace.createdAt.getTime(),
+        };
+        collection.set(collabId, entry);
+        console.log(`Restored collab ${collabId} from MongoDB to memory for getActiveUsers`);
+        hasId = true;
+      }
+    } catch (error) {
+      console.error("Error checking MongoDB for collabId:", error);
+    }
+  }
+
+  if (!hasId) {
     return res.status(404).json({ error: "Collab ID not found" });
   }
 
-  const activeUsers = collection.get(collabId).activeUsers;
+  const activeUsers = collection.get(collabId).activeUsers || [];
   res.json(activeUsers);
 });
 

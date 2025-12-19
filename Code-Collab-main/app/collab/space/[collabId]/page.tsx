@@ -2,6 +2,7 @@
 import { userState } from "@/app/states/userState";
 import { useRecoilState } from "recoil";
 import CodeEditor from "./Editor";
+import SimpleEditor from "./SimpleEditor";
 import SideBar from "./SideBar";
 import { useEffect, useState } from "react";
 import io from "socket.io-client";
@@ -23,6 +24,7 @@ export default function Page({ params }: { params: { collabId: string } }) {
   const [output, setOutput] = useRecoilState(CodeResult);
   const [lang, setLang] = useRecoilState(codeLang);
   const [lastSaveTime, setLastSaveTime] = useState<number>(Date.now());
+  const [useSimpleEditor, setUseSimpleEditor] = useState(false);
 
   const [spaceName, setSpaceName] = useState<string>("Untitled Space");
 
@@ -314,15 +316,35 @@ export default function Page({ params }: { params: { collabId: string } }) {
         {/* Main content area */}
         <div className="flex-1 h-screen flex flex-col">
           {/* Code editor takes most of the space */}
-          <div className="flex-1 overflow-hidden">
-            <CodeEditor
-              value={codeText}
-              lang={lang.name}
-              onChange={(e: any) => {
-                setCodeText(e);
-                emitCodeChange(e);
-              }}
-            />
+          <div className="flex-1 overflow-hidden relative">
+            {/* Floating toggle button - top right corner */}
+            <button
+              onClick={() => setUseSimpleEditor(!useSimpleEditor)}
+              className="absolute top-4 right-4 z-50 px-3 py-1 bg-gray-700/90 hover:bg-gray-600/90 text-white rounded-md text-xs font-medium shadow-lg backdrop-blur-sm border border-gray-600/50 transition-all duration-200 hover:scale-105"
+              title={useSimpleEditor ? "Switch to Monaco Editor" : "Switch to Simple Editor"}
+            >
+              {useSimpleEditor ? "Monaco" : "Simple"}
+            </button>
+            
+            {useSimpleEditor ? (
+              <SimpleEditor
+                value={codeText}
+                lang={lang.name}
+                onChange={(e: string) => {
+                  setCodeText(e);
+                  emitCodeChange(e);
+                }}
+              />
+            ) : (
+              <CodeEditor
+                value={codeText}
+                lang={lang.name}
+                onChange={(e: any) => {
+                  setCodeText(e);
+                  emitCodeChange(e);
+                }}
+              />
+            )}
           </div>
 
           {/* Output terminal at the bottom with fixed height */}
